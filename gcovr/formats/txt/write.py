@@ -244,7 +244,6 @@ def _uncovered_branches_str(filecov: FileCoverage) -> str:
     # Don't do any aggregation on branch results.
     return ",".join(str(lineno) for lineno in uncovered_lines)
 
-
 def _find_consecutive_ranges(items: Iterable[int]) -> Iterable[Tuple[int, int]]:
     first = last = None
     for item in items:
