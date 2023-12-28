@@ -707,6 +707,18 @@ GCOVR_CONFIG_OPTIONS = [
         ),
         type=relative_path,
     ),
+    GcovrConfigOption(
+        "percent_round_decimals",
+        ["--percent-precision"],
+        group="output_options",
+        help=(
+            "Number of decimal points of precision "
+            "when handling coverage in output "
+        ),
+        type=int,
+        nargs=1,
+        default=None,
+    ),
 ]
 
 

@@ -41,6 +41,7 @@ class BaseHandler:
             "starting_dir",
             "filter",
             "exclude",
+            "percent_round_decimals",
         ]
         option_dict = {}
         for name in global_options + [

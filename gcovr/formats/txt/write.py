@@ -46,6 +46,11 @@ LINE_WIDTH = 78
 def write_report(covdata: CovData, output_file: str, options: Options) -> None:
     """produce the classic gcovr text report"""
 
+    if options and options.percent_round_decimals:
+        global COL_PERCENTAGE_WIDTH         # ugly...
+        extra_characters = options.percent_round_decimals[0] + 1
+        COL_PERCENTAGE_WIDTH += extra_characters
+
     with open_text_for_writing(output_file, "coverage.txt") as fh:
         # Header
         fh.write("-" * LINE_WIDTH + "\n")
@@ -66,6 +71,7 @@ def write_report(covdata: CovData, output_file: str, options: Options) -> None:
 
         title_percentage = "Cover"
         title_un_covered = "Covered" if options.txt_report_covered else "Missing"
+
         fh.write(
             "File".ljust(COL_FILE_WIDTH)
             + title_total.rjust(COL_TOTAL_COUNT_WIDTH)
@@ -93,7 +99,7 @@ def write_report(covdata: CovData, output_file: str, options: Options) -> None:
 
         # Footer & summary
         fh.write("-" * LINE_WIDTH + "\n")
-        fh.write(_format_line("TOTAL", total_stat, "") + "\n")
+        fh.write(_format_line("TOTAL", total_stat, "", options=options) + "\n")
         fh.write("-" * LINE_WIDTH + "\n")
 
 
@@ -105,10 +111,14 @@ def write_summary_report(covdata: CovData, output_file: str, options: Options) -
     with open_text_for_writing(output_file, "coverage.txt") as fh:
 
         def print_stat(name: str, stat: CoverageStat):
-            percent = stat.percent_or(0.0)
+            precision = 1
+            if options.percent_round_decimals:
+                precision = options.percent_round_decimals[0]
+            percent = stat.percent_or(0.0, precision=precision)
             covered = stat.covered
             total = stat.total
-            fh.write(f"{name}: {percent:0.1f}% ({covered} out of {total})\n")
+
+            fh.write(f"{name}: {percent}% ({covered} out of {total})\n")
 
         stats = SummarizedStats.from_covdata(covdata)
 
@@ -135,7 +145,7 @@ def _summarize_file_coverage(coverage: FileCoverage, options):
             stat = coverage.line_coverage()
             covered_lines = _covered_lines_str(coverage)
 
-        return stat, _format_line(filename, stat, covered_lines)
+        return stat, _format_line(filename, stat, covered_lines, options=options)
     else:
         if options.txt_metric == "branch":
             stat = coverage.branch_coverage()
@@ -147,18 +157,22 @@ def _summarize_file_coverage(coverage: FileCoverage, options):
             stat = coverage.line_coverage()
             uncovered_lines = _uncovered_lines_str(coverage)
 
-        return stat, _format_line(filename, stat, uncovered_lines)
+        return stat, _format_line(filename, stat, uncovered_lines, options=options)
 
 
-def _format_line(name: str, stat: CoverageStat, uncovered_lines: str) -> str:
+def _format_line(name: str, stat: CoverageStat, uncovered_lines: str,*, options = None) -> str:
     raw_percent = stat.percent
     if raw_percent is None:
         percent = "--"
     else:
-        percent = str(int(raw_percent))
+        if options and options.percent_round_decimals:
+            percent = str(stat.percent_or("--", precision=options.percent_round_decimals[0]))
+            percent = percent.ljust(3 + int(raw_percent/100) + options.percent_round_decimals[0], "0")
+        else:
+            percent = str(int(raw_percent))
 
     name = name.ljust(COL_FILE_WIDTH)
-    if len(name) > 40:
+    if len(name) > COL_FILE_WIDTH:
         name = name + "\n" + " " * COL_FILE_WIDTH
 
     line = (

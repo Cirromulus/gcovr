@@ -628,13 +628,17 @@ class CoverageStat:
         """Percentage of covered elements, equivalent to ``self.percent_or(None)``"""
         return self.percent_or(None)
 
-    def percent_or(self, default: _T) -> Union[float, _T]:
+    def percent_or(self, default: _T, *, precision: int = 1) -> Union[float, _T]:
         """
         Percentage of covered elements.
 
         Coverage is truncated to one decimal:
         >>> CoverageStat(1234, 10000).percent_or("default")
         12.3
+
+        Coverage is truncated to more decimals:
+        >>> CoverageStat(1234, 10000).percent_or("default", precision = 2)
+        12.34
 
         Coverage is capped at 99.9% unless everything is covered:
         >>> CoverageStat(9999, 10000).percent_or("default")
@@ -656,7 +660,7 @@ class CoverageStat:
         # There is at least one uncovered item.
         # Round to 1 decimal and clamp to max 99.9%.
         ratio = self.covered / self.total
-        return min(99.9, round(ratio * 100.0, 1))
+        return min(99.9, round(ratio * 100.0, precision))
 
     def __iadd__(self, other: CoverageStat) -> CoverageStat:
         self.covered += other.covered
@@ -684,8 +688,8 @@ class DecisionCoverageStat:
     def percent(self) -> Optional[float]:
         return self.to_coverage_stat.percent
 
-    def percent_or(self, default: _T) -> Union[float, _T]:
-        return self.to_coverage_stat.percent_or(default)
+    def percent_or(self, default: _T, *, precision: int = 1) -> Union[float, _T]:
+        return self.to_coverage_stat.percent_or(default, precision=precision)
 
     def __iadd__(self, other: DecisionCoverageStat) -> DecisionCoverageStat:
         self.covered += other.covered
